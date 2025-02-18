@@ -300,4 +300,3 @@ renv::restore()
 > `renv::init()` will attempt to write the requisite ignore statements
 > to the project `.gitignore`." We refer to \@ref(learning-objectives-6)
 > for details on github and its use.
-
