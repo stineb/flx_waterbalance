@@ -63,6 +63,7 @@ PET_penman <- ET.PenmanMonteith(
   pressure = PA_F / 1000    # Convert PA_F from Pa to kPa
 )
 
+mytest = 0.5
 
 lenergy_to_evapotrans <- function(lat_energy, temperature, precip) {
   # define constants
@@ -119,3 +120,5 @@ site_annual_mean <- site_df |>
     AET = mean(AET, na.rm = TRUE),
     PET = mean(PET, na.rm = TRUE)
   )
+#plot(site_annual_mean)
+
