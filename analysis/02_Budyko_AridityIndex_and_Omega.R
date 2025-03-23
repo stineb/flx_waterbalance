@@ -36,7 +36,7 @@ table_budyko <- site_annual_mean |>
     table_merged |> select(sitename, cti),  # Only add CTI and Elevation
     by = "sitename"
   )
-test = 1
+
 
 # what site characteristics are statistically associated with omega.
 
