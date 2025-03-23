@@ -27,17 +27,18 @@ print(head(extracted_cti))
 # create maintable and add cti column
 # whc= water holding capacity / mat= mean annual temp / elv = elevation
 table_merged <- flx_all_data |>
- # dplyr::select(sitename, year_start, year_end, lon, lat, elv, canopy_height, whc, mat, p_over_pet) |>
+  dplyr::select(sitename, year_start, year_end, lon, lat, elv, canopy_height, whc, mat, p_over_pet) |>
   dplyr::mutate(cti = extracted_cti[[2]]) |>
   left_join(
     flx_fullyearsequence, by="sitename"
   ) |>
-  left_join(
-    fluxnet_meta_data|>
-      dplyr::select(sitename, MAT, MAP),# get MAT and PAT from meta-data from sites ->>> CAUTION: Abweichungen
-    by = "sitename") |>
-  filter(!drop_lecorr) |>  # where no full year sequence was found
-  filter(nyears_lecorr >= 3)
+#  left_join(
+#    flx_all_data|>
+#      dplyr::select(sitename, igbp_land_use, whc, mat, p_over_pet),# get additionals from meta-data per site
+#    by = "sitename") |>
+#  filter(!drop_lecorr) |>  # where no full year sequence was found
+#  filter(nyears_lecorr >= 3)
+
 
 
 #-------------------------------------------------------------------------------------
