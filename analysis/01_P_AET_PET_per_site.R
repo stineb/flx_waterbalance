@@ -12,7 +12,9 @@ lenergy_to_evapotrans <- function(lat_energy, temperature, atmo_pressure){
   1000 * 60 * 60 * 24 * lat_energy / (cwd::calc_enthalpy_vap(temperature) * cwd::calc_density_h2o(temperature, atmo_pressure))
 }
 
-
+install.packages("lubridate")
+library(lubridate)
+library(dplyr)
 site_annual_mean <- site_df |>
   mutate(
     # Convert latent heat flux (LE) into evapotranspiration (ET) in mm/day
