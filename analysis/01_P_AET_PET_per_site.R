@@ -36,6 +36,4 @@ site_annual_mean <- site_df |>
     PET_mean = mean(PET_day, na.rm = TRUE)
   )
 
-plot(site_annual_mean,
-  type='lines'
-)
+plot(site_annual_mean)

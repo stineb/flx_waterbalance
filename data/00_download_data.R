@@ -61,8 +61,8 @@ read_onesite <- function(site, path){
 
 #read daily data
 
-install.packages('lubridate')
-library(lubridate)
+#install.packages('lubridate')
+#library(lubridate)
 
 site_df <- purrr::map_dfr(
   table_merged$sitename,
