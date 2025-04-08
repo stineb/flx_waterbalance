@@ -104,7 +104,7 @@ ggplot(na.omit(table_budyko), aes(x = cti, y = epsilon_deviation)) +
 ggsave(here::here("~/flx_waterbalance/data/cti_budyko_relation_regression.png"), width = 6, height = 3.5)
 
 
-# Boxplots
+#### Boxplots -------------------------------------------
 # CTI in 3 groups (low, midddle, high)
 table_budyko$cti_class <- cut(table_budyko$cti,
                               breaks = quantile(table_budyko$cti, probs = c(0, 1/3, 2/3, 1), na.rm = TRUE),
@@ -121,10 +121,13 @@ ggplot(table_budyko, aes(x = cti_class, y = epsilon_deviation, fill = cti_class)
   theme(legend.position = "none")
 ggsave(here::here("~/flx_waterbalance/data/epsilon_prime_cti_boxplot.png"))
 
+#Boxplot with landuse
+
+
 
 ##### Heatmap -----------------------------------------
 
-cti_breaks <- c(2.285880, 4.197392, 4.942680, 5.849463, 6.893455, 14.612223)
+cti_breaks <- c(2.285880, 4.197392, 4.942680, 5.849463, 6.893455, 14.612223) # quantiles seq(0,1,0.2)
 cti_labels <- c("very low", "low", "middle", "high", "verx high")
 
 table_budyko <- table_budyko |>
@@ -132,7 +135,8 @@ table_budyko <- table_budyko |>
     cti,
     breaks = cti_breaks,
     labels = cti_labels,
-    include.lowest = TRUE
+    include.lowest = TRUE,
+    include.highest = TRUE
   ))
 
 # Mittelwert von ε′ je Kombination (Landnutzung x CTI-Klasse)
@@ -164,6 +168,55 @@ ggplot(heatmap_data,
     legend.text = element_text(size = 9)
 )
 ggsave(here::here("~/flx_waterbalance/data/cti_landuse_heatmap.png"),
+       width = 9,
+       height = 6,
+       dpi = 300)
+
+
+
+#Color MApping-----------------------
+
+ggplot(clean_budyko, aes(x = PET_mean / P_mean, y = AET_mean / P_mean, color = epsilon_deviation)) +
+  geom_point(size = 2) +
+  scale_color_gradient2(
+    low = "blue4",
+    mid = "white",
+    high = "firebrick",
+    midpoint = 0) +
+  labs(
+    title = "Budyko Diagram with ε′ Deviation",
+      x = "PET / P (Dryness Index)",
+      y = "AET / P (Evaporation Index)",
+      color = "ε′ (Deviation)",
+  theme_minial()
+      #ylim = c(0,4),
+      #xlim = c(0,10)
+)
+
+
+#Color Mapping and Scatterplot----------------------------
+install.packages('ggrepel')
+library(ggrepel)
+
+
+positive_epsilon <- clean_budyko |>
+  arrange(desc(epsilon_deviation)) |>
+  slice_max(epsilon_deviation, n=10)
+
+
+ggplot(clean_budyko, aes(x=PET_mean / P_mean, y=AET_mean / P_mean)) +
+  geom_point(aes(color = epsilon_deviation), size=3) +
+  #geom_density_2d(color ="black") +
+  scale_color_gradient2(low="blue4", mid="white", high="firebrick", midpoint=0) +
+  labs(title="Budyko with positive ε′ sites (top ten)",
+       x="PET / P",
+       y="AET / P",
+       color="ε′ (Deviation)") +
+  geom_text_repel(data=positive_epsilon,
+            aes(label=sitename),
+            size=3, color="black") +
+  theme_minimal()
+ggsave(here::here("~/flx_waterbalance/data/positive_sites_deviating_budyko.png"),
        width = 9,
        height = 6,
        dpi = 300)
