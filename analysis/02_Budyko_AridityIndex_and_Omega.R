@@ -55,126 +55,8 @@ library(dplyr)
 clean_budyko <- table_budyko |>
   filter(!is.na(cti) & !is.na(epsilon_deviation))
 
-#CORRELATION----------------------
-# what site characteristics are statistically associated with omega.
-# I want to figure out, how CTI and deviation are correlating
 
-
-cor(clean_budyko$cti,clean_budyko$epsilon_deviation, method = 'pearson')
-plot(clean_budyko$cti, clean_budyko$epsilon_deviation, main = 'Korrelation')
-# results with -0.02786773 is very low and negatively significantly under the threshold
-# correlation is therefore given
-# threshold was set to 0.05
-
-
-
-#REGRESSION----------------------
-regression_cti <- clean_budyko |>
-  lm(epsilon_deviation ~ cti)
-
-head(lm_model)
-
-
-
-#plot the relations between cti and epsilon deviations
-library(ggplot2)
-install.packages("labeling")
-install.packages('farver')
-
-gg_deviation_per_site <- table_budyko |>
-  ggplot(
-    na.omit(table_budyko), aes(x = sitename, y = epsilon_deviation)) +
-  geom_boxplot() +
-  labs(title = "Deviation from Budyko (ε') at different sites",
-       x = "Sites",
-       y = "Deviations ε' ") +
-  #theme_minimal()
-
-ggsave(here::here("~/flx_waterbalance/data/epsilon_deviation_budyko.png"), width = 8, height = 5)
-
-
-
-ggplot(na.omit(table_budyko), aes(x = cti, y = epsilon_deviation)) +
-  geom_point() +
-  geom_smooth(method = "lm", col = "blue") +
-  labs(title = "Relationship between CTI and ε'",
-       x = "Compound Topographic Index (CTI)",
-       y = "Deviation from Budyko Curve (ε')") +
-  theme_minimal()
-ggsave(here::here("~/flx_waterbalance/data/cti_budyko_relation_regression.png"), width = 6, height = 3.5)
-
-
-#### Boxplots -------------------------------------------
-# CTI in 3 groups (low, midddle, high)
-table_budyko$cti_class <- cut(table_budyko$cti,
-                              breaks = quantile(table_budyko$cti, probs = c(0, 1/3, 2/3, 1), na.rm = TRUE),
-                              labels = c("low", "middle", "high"),
-                              include.lowest = TRUE)
-
-# Boxplot with cti
-ggplot(table_budyko, aes(x = cti_class, y = epsilon_deviation, fill = cti_class)) +
-  geom_boxplot(outlier.color = "darkred") +
-  labs(title = "Boxplot: ε′ in CTI-classes",
-       x = "CTI-Class",
-       y = "ε′ (deviation from Budyko)") +
-  theme_minimal(base_size = 14) +
-  theme(legend.position = "none")
-ggsave(here::here("~/flx_waterbalance/data/epsilon_prime_cti_boxplot.png"))
-
-#Boxplot with landuse
-
-
-
-##### Heatmap -----------------------------------------
-
-cti_breaks <- c(2.285880, 4.197392, 4.942680, 5.849463, 6.893455, 14.612223) # quantiles seq(0,1,0.2)
-cti_labels <- c("very low", "low", "middle", "high", "verx high")
-
-table_budyko <- table_budyko |>
-  mutate(cti_class = cut(
-    cti,
-    breaks = cti_breaks,
-    labels = cti_labels,
-    include.lowest = TRUE,
-    include.highest = TRUE
-  ))
-
-# Mittelwert von ε′ je Kombination (Landnutzung x CTI-Klasse)
-heatmap_data <- table_budyko |>
-  group_by(cti_class, igbp_land_use) |>
-  summarise(mean_epsilon = mean(epsilon_deviation, na.rm = TRUE), .groups = "drop")
-
-ggplot(heatmap_data,
-       aes(x = cti_class, y = igbp_land_use, fill = mean_epsilon)) +
-  geom_tile(color = "white") +
-  scale_fill_gradient2(
-    low = "royalblue",
-    mid = "darkseagreen",
-    high = "purple",
-    midpoint = 0,
-    name = expression(epsilon*"′ (Mean Deviation)")) +
-  labs(
-    title = "Heatmap: CTI classes, Land Use and ε′",
-       x = "CTI Class",
-       y = "Land Use",
-       fill = "ε′ (Mean Deviation)") +
-  theme_minimal()
-  theme(
-    axis.text.x = element_text(angle = 45, hjust = 1, size = 10),
-    axis.text.y = element_text(size = 10),
-    axis.title = element_text(size = 12),
-    plot.title = element_text(size = 14, face = "bold"),
-    legend.title = element_text(size = 10),
-    legend.text = element_text(size = 9)
-)
-ggsave(here::here("~/flx_waterbalance/data/cti_landuse_heatmap.png"),
-       width = 9,
-       height = 6,
-       dpi = 300)
-
-
-
-#Color MApping-----------------------
+#Color MApping  with positive ε′ Deviation per Site -----------------------
 
 ggplot(clean_budyko, aes(x = PET_mean / P_mean, y = AET_mean / P_mean, color = epsilon_deviation)) +
   geom_point(size = 2) +
@@ -201,7 +83,7 @@ library(ggrepel)
 
 positive_epsilon <- clean_budyko |>
   arrange(desc(epsilon_deviation)) |>
-  slice_max(epsilon_deviation, n=10)
+  slice_max(epsilon_deviation, n=10)#chose top ten locations
 
 
 ggplot(clean_budyko, aes(x=PET_mean / P_mean, y=AET_mean / P_mean)) +
