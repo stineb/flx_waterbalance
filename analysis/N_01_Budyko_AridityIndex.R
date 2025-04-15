@@ -117,15 +117,15 @@ gg1 <- N_annual_means_df |>   #former gg1 and adf
 ######theoreticel Budyko-curve:
 #-----------------------------
 
-budyko_curve <- function(DI, omega = 2) { #
+N_budyko_curve <- function(DI, omega = 2) { #
   1 + DI - (1 + DI^omega)^(1 / omega)
 }
 
 # generate according to budyko formula 300 points from 0-3
-budyko_data <- data.frame(
+N_budyko_data <- data.frame(
   aridity = seq(0, 8, length.out = 300)
 )
-budyko_data$evaporation <- budyko_curve(budyko_data$aridity)
+N_budyko_data$evaporation <- N_budyko_curve(N_budyko_data$aridity)
 
 
 
@@ -140,11 +140,11 @@ N_annual_means_df$aridity <- N_annual_means_df$pet / N_annual_means_df$prec #add
 
 
 ##aridity quintiles:
-lower_quintile <- quantile(N_annual_means_df$aridity, 0.10, na.rm = TRUE)
-upper_quintile <- quantile(N_annual_means_df$aridity, 0.90, na.rm = TRUE)
-N_lower_quintile_budyko <- N_annual_means_df[N_annual_means_df$aridity <= lower_quintile, ]
-N_upper_quintile_budyko <- N_annual_means_df[N_annual_means_df$aridity >= upper_quintile, ]
-gg_budyko_img_aridity <- N_annual_means_df |>
+N_lower_quintile <- quantile(N_annual_means_df$aridity, 0.10, na.rm = TRUE)
+N_upper_quintile <- quantile(N_annual_means_df$aridity, 0.90, na.rm = TRUE)
+N_lower_quintile_budyko <- N_annual_means_df[N_annual_means_df$aridity <= N_lower_quintile, ]
+N_upper_quintile_budyko <- N_annual_means_df[N_annual_means_df$aridity >= N_upper_quintile, ]
+N_gg_budyko_img_aridity <- N_annual_means_df |>
   ggplot(aes(x = pet / prec, y = aet / prec)) +
   geom_point(color = "grey43") +
   geom_abline(slope = 1, intercept = 0, linetype = "dotted") +
@@ -152,7 +152,7 @@ gg_budyko_img_aridity <- N_annual_means_df |>
   geom_line(data = budyko_data, aes(x = aridity, y = evaporation),
             inherit.aes = FALSE, color = "black", linewidth = 0.7, linetype = "solid") +
   geom_point(data= N_lower_quintile_budyko, color = "firebrick") +
-  geom_point(data = N_upper_quintile_budyko, color = "springgreen3") +
+  geom_point(data = N_upper_quintile_budyko, color = "lawngreen") +
   theme_classic() +
   scale_x_continuous(limits = c(0, NA))+
   xlim(0, 7) +
@@ -160,92 +160,10 @@ gg_budyko_img_aridity <- N_annual_means_df |>
   labs(
     x = "Aridity Index (PET / P)",
     y = " Evaporative Index (AET / P)",
-    main = "Budyko Curve and Fluxnet Sites"
+    title = "Budyko Curve and Fluxnet Sites"
   )
 
-plot(gg_budyko_img_aridity)
-#ggsave(here::here())
+plot(N_gg_budyko_img_aridity)
 
+#ggsave(here::here("~/flx_waterbalance/data/budyko--aridity-quintiles.png"))
 
-
-
-# Plot with all sites with high
-#and low evaporation index (10% quintiles):
-#--------------------------------------
-
-
-## expand plot with upper and lower quintiles og site's means
-
-N_annual_means_df$evap_theory <- budyko_curve(N_annual_means_df$evap_theory) #calculating theoretical budyko by formula
-
-##evaporative quintiles:
-lower_quintile <- quantile(N_annual_means_df$evap_theory, 0.10, na.rm = TRUE)
-upper_quintile <- quantile(N_annual_means_df$evap_theory, 0.90, na.rm = TRUE)
-N_lower_quintile_budyko_evap <- N_annual_means_df[N_annual_means_df$evap_theory <= lower_quintile, ]
-N_upper_quintile_budyko_evap <- N_annual_means_df[N_annual_means_df$evap_theory >= upper_quintile, ]
-
-
-gg_budyko_img_evap <- N_annual_means_df |>
-  ggplot(aes(x = pet / prec, y = aet / prec)) +
-  geom_point(color = "grey43") +
-  geom_abline(slope = 1, intercept = 0, linetype = "dotted") +
-  geom_hline(yintercept = 1, linetype = "dotted") +
-  geom_line(data = budyko_data, aes(x = aridity, y = evaporation),
-            inherit.aes = FALSE, color = "black", linewidth = 0.7, linetype = "solid") +
-  geom_point(data= N_lower_quintile_budyko_evap, color = "firebrick") +
-  geom_point(data = N_upper_quintile_budyko_evap, color = "springgreen3") +
-  theme_classic() +
-  scale_x_continuous(limits = c(0, NA))+
-  xlim(0, 7) +
-  ylim(0, 5) +
-  labs(
-    x = "Aridity Index (PET / P)",
-    y = " Evaporative Index (AET / P)",
-    main = "Budyko Curve and Fluxnet Sites"
-  )
-
-plot(gg_budyko_img_aridity)
-
-
-
-
-
-
-
-
-#---------------------------------------------------------------------------------------------------
-## gg2 Budyko by Geco ---------
-gg2 <- N_annual_means_df |>  #former gg2 and adf
-  ggplot(
-    aes(
-      x = pet/prec,
-      y = aet/prec
-    )
-  ) +
-  geom_point(color = "tomato") +
-  gghighlight(
-    sitename %in% c("DE-Hai", "US-Ton", "FI-Hyy", "US-ICh", "AU-How"),
-    label_key = sitename,
-    use_direct_label = FALSE,
-    unhighlighted_params = list(color = "grey40")
-  ) +
-  geom_label(aes(label = sitename),
-             hjust = 1, vjust = 1, fill = "white", colour = "black", alpha = 0.7) +
-  geom_abline(slope = 1, intercept = 0, linetype = "dotted") +
-  geom_hline(yintercept = 1, linetype = "dotted") +
-  theme_classic() +
-  xlim(0, 3) +
-  ylim(0, 2.5) +
-  labs(
-    x = expression(paste("Aridity Index")),
-    y = expression(paste("Evaporative Index"))
-  )
-
-plot_grid(
-  gg1,
-  gg2,
-  labels = c("a", "b")
-)
-plot()
-
-ggsave(here::here("~/flx_waterbalance/data/budyko.png"), width = 8, height = 3.5)
