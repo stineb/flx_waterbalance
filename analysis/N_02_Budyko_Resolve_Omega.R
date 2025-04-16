@@ -37,8 +37,13 @@ N_budyko_omega_df <- N_annual_means_df |>
 head(N_budyko_omega_df)
 
 
+
+
+####PLOTS --------------------------------------------------
+## top ten deviating sites
 install.packages('ggrepel')
 library(ggrepel)
+
 
 
 N_positive_epsilon <- N_budyko_omega_df |>
@@ -53,8 +58,8 @@ ggplot(N_budyko_omega_df, aes(x = pet / prec, y = aet / prec)) +
   scale_color_gradient2(low = "white", mid = "dodgerblue4", high = "firebrick2", midpoint = 0) +
   labs(
     title = "Budyko with positive ε′ sites (top ten)",
-    x = "PET / P",
-    y = "AET / P",
+    x = " Evaporative Index PET/P",
+    y = "Aridity Index AET/P",
     color = "ε′ (Deviation)"
   ) +
   geom_text_repel(data = N_positive_epsilon,
@@ -69,44 +74,38 @@ ggsave(here::here("~/flx_waterbalance/data/N_positive_sites_deviating_budyko.png
        dpi = 300)
 
 
+### Countourlines of ε′ per Site:
+
+ggplot(N_budyko_omega_df, aes(x = pet / prec, y = aet / prec)) +
+  geom_point(aes(color = epsilon_deviation), size = 3) +
+  geom_density_2d(aes(color = epsilon_deviation)) +
+  scale_color_gradient2(low = "blue", mid = "white", high = "red", midpoint = 0) +
+  labs(title = "Budyko Diagram with ε′ Contours",
+       x = "PET / P",
+       y = "AET / P",
+       color = "ε′ (Deviation)") +
+  theme_minimal()
 
 
 
 
 
 
+### Dots of ε′ per Site
 
-# Funktion zur Berechnung von ω für ->>>>>>>>>> ACHTUNG: OMEGA VALUES NA BECAUSE <0 in BUDYKO CALCULATION IN FUNCTION
-#---------------------------------------------------------------------------------------------------------------------
-# N_solve_omega <- function(aet, p, pet) { # ω
-#   N_evaporation_ratio <- aet/p
-#   if(is.na(N_evaporation_ratio)  || N_evaporation_ratio > 4) return(NA) # 0 ≤AET/P possible greater 1 values permitted
-#
-#   N_fun_omega <- function(omega) {
-#     (1 + (pet / p)^omega)^(-1 / omega) - N_evaporation_ratio # innere Funktion zur U msetzung der Gleichung
-#   }
-#
-#   # Finde die Nullstelle im Bereich [0.01, 10]
-#   N_omega_value <- tryCatch(
-#     uniroot(N_fun_omega, interval = c(0.0001, 20))$root, #find omega value
-#     error = function(e) NA  # Falls uniroot fehlschlägt, gib NA zurück
-#   )
-#
-#   return(N_omega_value)
-# }
+ggplot(N_budyko_omega_df, aes(x = pet / prec, y = aet / prec, size = abs(epsilon_deviation))) +
+  geom_point(alpha = 0.7) +
+  scale_size(range = c(0, 9)) +
+  labs(title = "Budyko Diagram: Point Size Represents |ε′|",
+       x = "PET / P",
+       y = "AET / P",
+       size = "|ε′| (Absolute Deviation)") +
+  theme_minimal()
 
 
 
 
-#------------------------------------------------------------------------------------------------------------------------
-# Berechnung von ω für jede Zeile der Tabelle and hinzufügen von zusätzlichen Faktoren
-
-
-
-#clean_budyko <- table_budyko |>
-#  filter(!is.na(cti) & !is.na(epsilon_deviation))
-
-
+### Regressionline in Scatterploot
 
 
 
