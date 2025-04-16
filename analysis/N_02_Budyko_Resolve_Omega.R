@@ -55,12 +55,18 @@ N_positive_epsilon <- N_budyko_omega_df |>
 
 ggplot(N_budyko_omega_df, aes(x = pet / prec, y = aet / prec)) +
   geom_point(aes(color = epsilon_deviation), size =1.5) +
-  scale_color_gradient2(low = "white", mid = "dodgerblue4", high = "firebrick2", midpoint = 0) +
-  labs(
-    title = "Budyko with positive ε′ sites (top ten)",
-    x = " Evaporative Index PET/P",
-    y = "Aridity Index AET/P",
-    color = "ε′ (Deviation)"
+  scale_color_gradient2(
+    low = "white", mid = "dodgerblue4", high = "firebrick2", midpoint = 0,
+    limits = c(epsilon_min, epsilon_max),
+    name = expression(epsilon*"′ (Deviation)"),
+    breaks = scales::pretty_breaks(n = 5),  # optional: automatische sinnvolle Ticks
+    labels = scales::label_scientific(digits = 2)
+  ) +
+    labs(
+     title = "Budyko with positive ε′ sites (top ten)",
+     x = " Evaporative Index PET/P",
+     y = "Aridity Index AET/P",
+      color = "ε′ (Deviation)"
   ) +
   geom_text_repel(data = N_positive_epsilon,
                   aes(label = sitename),
