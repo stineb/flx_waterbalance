@@ -60,17 +60,19 @@ N_l_energy_to_et <- function(le, tc, patm){ #former le_to_et
 N_annual_means_df <- N_daily_data |>   # former adf and ddf
   mutate(
     # convert latent heat flux into mass flux in mm day-1
-    le_mm = N_l_energy_to_et(LE_F_MDS, TA_F_MDS, PA_F),
-    pet = 60 * 60 * 24 * cwd::pet(NETRAD, TA_F_MDS, PA_F)
+    le_mm = N_l_energy_to_et(LE_F_MDS, TA_F_MDS, PA_F),    #Umwandlung von Latentwärmefluss in Verdunstung in mm pro Tag
+    le_mm_corr = N_l_energy_to_et(LE_CORR, TA_F_MDS, PA_F), # Umwandlung mit korrigierten latenten Wärmeflüssen in mm pro Tag
+    pet = 60 * 60 * 24 * cwd::pet(NETRAD, TA_F_MDS, PA_F)  # Umrechnung von W/m² zu mm
   ) |>
   mutate(year = year(TIMESTAMP)) |>
   group_by(sitename, year) |>
   summarise(
     prec = sum(P_F),
     aet = sum(le_mm),
+    aet_corr = sum(le_mm_cor)
     pet = sum(pet)
   ) |>
-  ungroup() |>
+  ungroup() |>                #Mittelwerte pro site
   group_by(sitename) |>
   summarise(
     prec = mean(prec, na.rm = TRUE),
@@ -140,22 +142,22 @@ N_annual_means_df$aridity <- N_annual_means_df$pet / N_annual_means_df$prec #add
 
 
 ##aridity quintiles:
-N_lower_quintile <- quantile(N_annual_means_df$aridity, 0.10, na.rm = TRUE)
-N_upper_quintile <- quantile(N_annual_means_df$aridity, 0.90, na.rm = TRUE)
-N_lower_quintile_budyko <- N_annual_means_df[N_annual_means_df$aridity <= N_lower_quintile, ]
+#N_lower_quintile <- quantile(N_annual_means_df$aridity, 0.10, na.rm = TRUE)
+N_upper_quintile <- quantile(N_annual_means_df$aridity, 0.80, na.rm = TRUE)
+#N_lower_quintile_budyko <- N_annual_means_df[N_annual_means_df$aridity <= N_lower_quintile, ]
 N_upper_quintile_budyko <- N_annual_means_df[N_annual_means_df$aridity >= N_upper_quintile, ]
 N_gg_budyko_img_aridity <- N_annual_means_df |>
   ggplot(aes(x = pet / prec, y = aet / prec)) +
   geom_point(color = "grey43") +
   geom_abline(slope = 1, intercept = 0, linetype = "dotted") +
   geom_hline(yintercept = 1, linetype = "dotted") +
-  geom_line(data = budyko_data, aes(x = aridity, y = evaporation),
+  geom_line(data = N_annual_means_df, aes(x = aridity, y = evap_theory),
             inherit.aes = FALSE, color = "black", linewidth = 0.7, linetype = "solid") +
-  geom_point(data= N_lower_quintile_budyko, color = "firebrick") +
-  geom_point(data = N_upper_quintile_budyko, color = "lawngreen") +
+  #geom_point(data= N_lower_quintile_budyko, color = "firebrick") +
+  geom_point(data = N_upper_quintile_budyko, color = "firebrick") +
   theme_classic() +
   scale_x_continuous(limits = c(0, NA))+
-  xlim(0, 7) +
+  xlim(0, 8) +
   ylim(0, 5) +
   labs(
     x = "Aridity Index (PET / P)",
@@ -165,5 +167,5 @@ N_gg_budyko_img_aridity <- N_annual_means_df |>
 
 plot(N_gg_budyko_img_aridity)
 
-#ggsave(here::here("~/flx_waterbalance/data/budyko--aridity-quintiles.png"))
+ggsave(here::here("~/flx_waterbalance/data/budyko-high_aridity.png"))
 
