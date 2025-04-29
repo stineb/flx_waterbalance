@@ -88,54 +88,36 @@ N_annual_means_df <- N_daily_data |>   # former adf and ddf
 
 
 
-#---------------------------------### PLOTS ####---------------------------------------------------
 
-## AET-PET  by Geco----------
+# load condensation data:
+N_cond_df <- read.csv("/data/scratch/bstocker/foranna/df_cond_mean_ann.csv")
 
-gg1 <- N_annual_means_df |>   #former gg1 and adf
-  ggplot(
-    aes(
-      x = pet,
-      y = aet
-    )
-  ) +
-  geom_point(color = "tomato") +
-  gghighlight(
-    sitename %in% c("DE-Hai", "US-Ton", "FI-Hyy", "US-ICh", "AU-How"),
-    label_key = sitename,
-    use_direct_label = FALSE,
-    unhighlighted_params = list(color = "grey40")
-  ) +
-  geom_label(aes(label = sitename),
-             hjust = 1, vjust = 1, fill = "white", colour = "black", alpha = 0.7) +
-  geom_abline(slope = 1, intercept = 0, linetype = "dotted") +
-  geom_hline(yintercept = 1, linetype = "dotted") +
-  theme_classic() +
-  xlim(-30, 2500) +
-  labs(
-    x = expression(paste("PET (mm yr"^-1, ")")),
-    y = expression(paste("AET (mm yr"^-1, ")"))
+N_annual_means_df <- N_annual_means_df |>
+  left_join(
+    N_cond_df |>
+      select(sitename, cond_mean_ann),
+    by = "sitename"
   )
-
-
-
 
 ##----- Budyko curve  ------------------------------------
 
 ######theoretical Budyko-curve:
 #-----------------------------
 
+
+#budyko formula by Fu:
 N_budyko_curve <- function(DI, omega = 2) { #
   1 + DI - (1 + DI^omega)^(1 / omega)
 }
 
-# generate according to budyko formula 300 points from 0-8 with theoretical curve
+# generate according to budyko formula 300 points from 0-9 with theoretical curve
 N_budyko_data <- data.frame(
   aridity = seq(0, 9, length.out = 300)
 )
 
 N_budyko_data$evaporation <- N_budyko_curve(N_budyko_data$aridity)
 N_annual_means_df$aridity <- N_annual_means_df$pet / N_annual_means_df$prec #add additional row 'aridity'
+
 # Budyko theoretical per site
 N_annual_means_df <- N_annual_means_df |>
   mutate(evap_theory = N_budyko_curve(aridity))
@@ -147,10 +129,93 @@ N_annual_means_df <- N_annual_means_df |>
 N_annual_means_df <- N_annual_means_df |>
   mutate(over_budyko_label = ifelse((aet_corr / prec) > evap_theory & aridity >= 3,
                                     "Over Budyko & Aridity ≥ 3", NA))
-#plot:
+
+
+##CONDENSATION:::
+#-----------------------------------------------
+# add condensation and update AET_CORR
+N_annual_means_df <- N_annual_means_df |>
+  mutate(
+    aet_corr_with_cond = aet_corr + cond_mean_ann,
+    evap_index_with_cond = aet_corr_with_cond / (prec + cond_mean_ann),
+    aridity_with_cond = pet / (prec + cond_mean_ann),# Adjust aridity with condensation
+    evap_theory_with_cond = N_budyko_curve(aridity_with_cond),
+    over_budyko_label = ifelse((aet_corr_with_cond / prec) > evap_theory_with_cond & aridity_with_cond >= 3,
+                               "Over Budyko & Aridity ≥ 3", NA)
+    )
+
+
+
+N_annual_means_df <- N_annual_means_df |>
+  mutate(
+    aet_corr_with_cond = aet_corr + cond_mean_ann,
+    water_input = prec + cond_mean_ann,
+    aridity_with_cond = pet / water_input,
+    evap_theory_with_cond = N_budyko_curve(aridity_with_cond),
+    evap_index_with_cond = aet_corr_with_cond / water_input,
+    over_budyko_label = ifelse(evap_index_with_cond > evap_theory_with_cond & aridity_with_cond >= 3,
+                               "Over Budyko & Aridity ≥ 3", NA)
+  )
+
+
+
+
+
+#---------------------------------### PLOTS ####---------------------------------------------------
+
+
+
+#plot with lecorr and condensation:
+N_gg_budyko_img_aridity_lecorr_cond <- N_annual_means_df |>
+  ggplot(aes(x = aridity_with_cond, y = evap_index_with_cond)) +
+  geom_point(aes(color = over_budyko_label), na.rm = TRUE) +  # Points colored by over Budyko label
+  scale_color_manual(values = c("Over Budyko & Aridity ≥ 3" = "firebrick")) +
+  geom_abline(slope = 1, intercept = 0, linetype = "dotted") +
+  geom_hline(yintercept = 1, linetype = "dotted") +
+  geom_line(data = N_budyko_data, aes(x = aridity, y = evaporation),
+            inherit.aes = FALSE, color = "black", linewidth = 0.7, linetype = "solid") +
+  theme_classic() +
+  scale_x_continuous(limits = c(0, 8)) +
+  ylim(0, 5) +
+  labs(
+    x = "Aridity Index (PET / P)",
+    y = "Evaporative Index (AET / P)",
+    title = "Budyko Curve  (With Condensation)",
+    color = NULL
+  )
+
+plot(N_gg_budyko_img_aridity_lecorr_cond)
+ggsave(here::here("~/flx_waterbalance/data/N_gg_budyko_lecorr_and_cond-high_aridity.png"))
+
+
+
+# N_gg_budyko_img_aridity_lecorr_cond <- N_annual_means_df |>
+#   ggplot(aes(x = aridity_with_cond, y = evap_index_with_cond)) +
+#   geom_point(aes(color = over_budyko_label), na.rm = TRUE) +
+#   scale_color_manual(values = c("Over Budyko & Aridity ≥ 3" = "firebrick")) +
+#   geom_abline(slope = 1, intercept = 0, linetype = "dotted") +
+#   geom_hline(yintercept = 1, linetype = "dotted") +
+#   geom_line(data = N_budyko_data, aes(x = aridity, y = evaporation),
+#             inherit.aes = FALSE, color = "black", linewidth = 0.7, linetype = "solid") +
+#   theme_classic() +
+#   scale_x_continuous(limits = c(0, 8)) +
+#   ylim(0, 2) +  # ggf. begrenzen, wenn 5 zu viel ist
+#   labs(
+#     x = "Aridity Index (PET / (P + Condensation))",
+#     y = "Evaporative Index ((AET_CORR + Cond) / (P + Cond))",
+#     title = "Budyko Curve and Fluxnet Sites (With Condensation)",
+#     color = NULL
+#   )
+
+
+
+
+
+
+#plot with lecorr and without condensation:
 N_gg_budyko_img_aridity <- N_annual_means_df |>
   ggplot(aes(x = aridity, y = aet_corr / prec)) +
-  geom_point(aes(color = over_budyko_label), na.rm = TRUE) +  # nur TRUE kriegt Farbe/Legende
+  geom_point(aes(color = over_budyko_label), na.rm = TRUE) +
   scale_color_manual(values = c("Over Budyko & Aridity ≥ 3" = "firebrick")) +
   geom_abline(slope = 1, intercept = 0, linetype = "dotted") +
   geom_hline(yintercept = 1, linetype = "dotted") +
@@ -162,16 +227,16 @@ N_gg_budyko_img_aridity <- N_annual_means_df |>
   labs(
     x = "Aridity Index (PET / P)",
     y = "Evaporative Index (AET_CORR / P)",
-    title = "Budyko Curve and Fluxnet Sites",
-    color = NULL  # optional: kein Titel in der Legende
+    title = "Budyko Curve (Without Condensateion)",
+    color = NULL
   )
 
 plot(N_gg_budyko_img_aridity)
+ggsave(here::here("~/flx_waterbalance/data/N_gg_budyko_lecorr-high_aridity.png"))
 
 
 
-
-
+cowplot::plot_grid(N_gg_budyko_img_aridity_lecorr_cond, N_gg_budyko_img_aridity, ncol =2)
 
 
 
@@ -196,7 +261,7 @@ plot(N_gg_budyko_img_aridity)
 # plot(N_gg_budyko_img_aridity)
 #
 # 4# Plot with all sites with high
-# #and low aritity index (10% quintiles):
+# # aritity index (10% quintiles):
 # #--------------------------------------
 #
 # ## expand plot with upper and lower quintiles og site's means
@@ -232,5 +297,38 @@ plot(N_gg_budyko_img_aridity)
 #   )
 #
 # plot(N_gg_budyko_img_aridity)
-ggsave(here::here("~/flx_waterbalance/data/budyko-high_aridity.png"))
+#ggsave(here::here("~/flx_waterbalance/data/budyko-high_aridity.png"))
+
+
+
+
+
+
+## AET-PET  by Geco----------
+
+# gg1 <- N_annual_means_df |>   #former gg1 and adf
+#   ggplot(
+#     aes(
+#       x = pet,
+#       y = aet
+#     )
+#   ) +
+#   geom_point(color = "tomato") +
+#   gghighlight(
+#     sitename %in% c("DE-Hai", "US-Ton", "FI-Hyy", "US-ICh", "AU-How"),
+#     label_key = sitename,
+#     use_direct_label = FALSE,
+#     unhighlighted_params = list(color = "grey40")
+#   ) +
+#   geom_label(aes(label = sitename),
+#              hjust = 1, vjust = 1, fill = "white", colour = "black", alpha = 0.7) +
+#   geom_abline(slope = 1, intercept = 0, linetype = "dotted") +
+#   geom_hline(yintercept = 1, linetype = "dotted") +
+#   theme_classic() +
+#   xlim(-30, 2500) +
+#   labs(
+#     x = expression(paste("PET (mm yr"^-1, ")")),
+#     y = expression(paste("AET (mm yr"^-1, ")"))
+#   )
+
 
