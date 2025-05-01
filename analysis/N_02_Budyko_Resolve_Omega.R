@@ -3,7 +3,7 @@ library(dplyr)
 
 
 
-###---- ADJUSTMENT WITH CONDENSATION AND LE_CORR:::
+###---- SOLVING OMEGA - ADJUSTMENT WITH CONDENSATION AND LE_CORR:::
 #-----------------------------------------------------
 
 N_CORR_solve_omega <- function(aet_corr_with_cond, water_input, pet) {
@@ -83,8 +83,9 @@ N_CORR_budyko_omega_df <- N_annual_means_df %>%
 #-------------------------------------------------------------------------------------------------------------------------
 
 
-####PLOTS --------------------------------------------------
+####BUDYKO PLOTS --------------------------------------------------
 
+#ACTUAL PLOT CORRECTED
 N_CORR_budyko_data <- data.frame(
   DI = seq(0, 9, length.out = 2000)
 ) |>

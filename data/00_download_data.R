@@ -24,6 +24,10 @@ extracted_cti <- terra::extract(
 )
 print(head(extracted_cti))
 
+
+#involve condensation:
+
+
 # create maintable and add cti column
 # whc= water holding capacity / mat= mean annual temp / elv = elevation
 table_merged <- flx_all_data |>

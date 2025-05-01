@@ -134,17 +134,6 @@ N_annual_means_df <- N_annual_means_df |>
 ##CONDENSATION:::
 #-----------------------------------------------
 # add condensation and update AET_CORR
-N_annual_means_df <- N_annual_means_df |>
-  mutate(
-    aet_corr_with_cond = aet_corr + cond_mean_ann,
-    evap_index_with_cond = aet_corr_with_cond / (prec + cond_mean_ann),
-    aridity_with_cond = pet / (prec + cond_mean_ann),# Adjust aridity with condensation
-    evap_theory_with_cond = N_budyko_curve(aridity_with_cond),
-    over_budyko_label = ifelse((aet_corr_with_cond / prec) > evap_theory_with_cond & aridity_with_cond >= 3,
-                               "Over Budyko & Aridity ≥ 3", NA)
-    )
-
-
 
 N_annual_means_df <- N_annual_means_df |>
   mutate(
@@ -182,7 +171,8 @@ N_gg_budyko_img_aridity_lecorr_cond <- N_annual_means_df |>
     y = "Evaporative Index (AET / P)",
     title = "Budyko Curve  (With Condensation)",
     color = NULL
-  )
+  )+
+  theme(legend.position = "none")
 
 plot(N_gg_budyko_img_aridity_lecorr_cond)
 ggsave(here::here("~/flx_waterbalance/data/N_gg_budyko_lecorr_and_cond-high_aridity.png"))
@@ -213,6 +203,11 @@ ggsave(here::here("~/flx_waterbalance/data/N_gg_budyko_lecorr_and_cond-high_arid
 
 
 #plot with lecorr and without condensation:
+
+N_annual_means_df <- N_annual_means_df |>
+  mutate(over_budyko_label = ifelse((aet_corr / prec) > evap_theory & aridity >= 3,
+                                    "Over Budyko & Aridity ≥ 3", NA))
+
 N_gg_budyko_img_aridity <- N_annual_means_df |>
   ggplot(aes(x = aridity, y = aet_corr / prec)) +
   geom_point(aes(color = over_budyko_label), na.rm = TRUE) +
@@ -226,10 +221,11 @@ N_gg_budyko_img_aridity <- N_annual_means_df |>
   ylim(0, 5) +
   labs(
     x = "Aridity Index (PET / P)",
-    y = "Evaporative Index (AET_CORR / P)",
+    y = "Evaporative Index (AET / P)",
     title = "Budyko Curve (Without Condensateion)",
     color = NULL
-  )
+  )+
+  theme(legend.position = "none")
 
 plot(N_gg_budyko_img_aridity)
 ggsave(here::here("~/flx_waterbalance/data/N_gg_budyko_lecorr-high_aridity.png"))
@@ -238,7 +234,7 @@ ggsave(here::here("~/flx_waterbalance/data/N_gg_budyko_lecorr-high_aridity.png")
 
 cowplot::plot_grid(N_gg_budyko_img_aridity_lecorr_cond, N_gg_budyko_img_aridity, ncol =2)
 
-
+#--------------------------------------------------------------------------------------------------
 
 # N_gg_budyko_img_aridity <- N_annual_means_df |>
 #   ggplot(aes(x = aridity, y = aet_corr / prec)) +

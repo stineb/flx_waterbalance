@@ -28,6 +28,13 @@ N_CORR_merged_df <- N_CORR_budyko_omega_df |>
         cti,
         cti_class),
     by = join_by(sitename)
+  )|>
+  left_join(
+    flx_all_data |>
+      select(
+        sitename,
+        igbp_land_use),
+    by = join_by(sitename)
   )
 
 
